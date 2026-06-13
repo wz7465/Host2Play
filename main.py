@@ -27,7 +27,7 @@ def send_tg_photo(token, chat_id, photo_path, caption="Screenshot"):
         print(f"[ERROR] Telegram 发送失败: {e}")
 
 # ======================
-# Screenshot + Info
+# Screenshot
 # ======================
 def capture_page(url, save_path):
     vdisplay = Xvfb(width=1280, height=720)
@@ -49,37 +49,6 @@ def capture_page(url, save_path):
         print(f"[INFO] 打开页面: {url}")
         page.get(url, retry=2)
         time.sleep(5)
-
-        # 提取服务器名称
-        server_name = page.ele('#serverName', timeout=3)
-        server_name = server_name.text.strip() if server_name else "未知"
-
-        # 提取到期时间
-        expire = page.ele('#expireDate', timeout=3)
-        expire = expire.text.strip() if expire else "未知"
-
-        # 在页面顶部插入信息
-        page.run_js(f"""
-            let info = document.createElement('div');
-            info.style.position = 'fixed';
-            info.style.top = '0';
-            info.style.left = '0';
-            info.style.width = '100%';
-            info.style.background = 'rgba(0,0,0,0.75)';
-            info.style.color = 'white';
-            info.style.padding = '12px';
-            info.style.fontSize = '16px';
-            info.style.zIndex = '999999';
-            info.style.lineHeight = '1.6';
-            info.innerHTML = `
-                <b>服务器：</b> {server_name}<br>
-                <b>到期：</b> {expire}<br>
-                <b>URL：</b> {url}
-            `;
-            document.body.appendChild(info);
-        """)
-
-        time.sleep(1)
 
         print(f"[INFO] 截图保存到: {save_path}")
         page.get_screenshot(path=save_path)
@@ -104,7 +73,9 @@ def main():
     for idx, url in enumerate(urls, 1):
         save_path = f"output/screenshot_{idx}.png"
         capture_page(url, save_path)
-        send_tg_photo(tg_token, tg_chat_id, save_path, caption=f"页面截图 {idx}")
+
+        caption = f"页面截图 {idx}\nURL: {url}"
+        send_tg_photo(tg_token, tg_chat_id, save_path, caption)
 
     print("[INFO] 全部完成")
 
