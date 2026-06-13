@@ -46,27 +46,21 @@ def capture_page(url, save_path):
         page.get(url, retry=2)
         time.sleep(5)
 
-        # -------------------------
-        # 提取服务器名称（最稳）
-        # -------------------------
-        server_line = page.ele("text:服务器", timeout=3)
-        if server_line:
-            server_name = server_line.text.split("：")[-1].strip()
+        # 提取服务器名称
+        server_ele = page.ele("text:Renew server", timeout=3)
+        if server_ele:
+            server_name = server_ele.parent().text.split(":")[-1].strip()
         else:
             server_name = "未知"
 
-        # -------------------------
-        # 提取到期时间（最稳）
-        # -------------------------
-        expire_line = page.ele("text:Deletes on", timeout=3)
-        if expire_line:
-            expire = expire_line.parent().text.replace("Deletes on:", "").strip()
+        # 提取到期时间
+        expire_ele = page.ele("text:Expires in", timeout=3)
+        if expire_ele:
+            expire = expire_ele.parent().text.replace("Expires in:", "").strip()
         else:
             expire = "未知"
 
-        # -------------------------
         # 截图（干净）
-        # -------------------------
         print(f"[INFO] 截图保存到: {save_path}")
         page.get_screenshot(path=save_path)
 
@@ -94,7 +88,6 @@ def main():
         save_path = f"output/screenshot_{idx}.png"
         server_name, expire = capture_page(url, save_path)
 
-        # Telegram caption（截图下面显示）
         caption = (
             f"服务器：{server_name}\n"
             f"到期：{expire}\n"
