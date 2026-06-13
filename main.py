@@ -9,18 +9,13 @@ import requests
 # ======================
 def send_tg_photo(token, chat_id, photo_path, caption):
     url = f"https://api.telegram.org/bot{token}/sendPhoto"
-    try:
-        with open(photo_path, "rb") as f:
-            resp = requests.post(
-                url,
-                data={"chat_id": chat_id, "caption": caption},
-                files={"photo": f},
-                timeout=30
-            )
-        resp.raise_for_status()
-        print("[INFO] Telegram 发送成功")
-    except Exception as e:
-        print(f"[ERROR] Telegram 发送失败: {e}")
+    with open(photo_path, "rb") as f:
+        requests.post(
+            url,
+            data={"chat_id": chat_id, "caption": caption},
+            files={"photo": f},
+            timeout=30
+        )
 
 # ======================
 # Screenshot + Info
@@ -42,28 +37,28 @@ def capture_page(url, save_path):
 
         page = ChromiumPage(co)
 
-        print(f"[INFO] 打开页面: {url}")
         page.get(url, retry=2)
         time.sleep(5)
 
-        # 提取服务器名称
-        server_ele = page.ele("text:Renew server", timeout=3)
-        if server_ele:
-            server_name = server_ele.parent().text.split(":")[-1].strip()
-        else:
-            server_name = "未知"
+        # -------------------------
+        # 提取服务器名称（唯一正确方式）
+        # -------------------------
+        server_ele = page.ele('#serverName', timeout=3)
+        server_name = server_ele.text.strip() if server_ele else "未知"
 
-        # 提取到期时间
+        # -------------------------
+        # 提取到期时间（你要的是 Expires in）
+        # -------------------------
         expire_ele = page.ele("text:Expires in", timeout=3)
         if expire_ele:
             expire = expire_ele.parent().text.replace("Expires in:", "").strip()
         else:
             expire = "未知"
 
+        # -------------------------
         # 截图（干净）
-        print(f"[INFO] 截图保存到: {save_path}")
+        # -------------------------
         page.get_screenshot(path=save_path)
-
         page.quit()
 
         return server_name, expire
@@ -96,8 +91,6 @@ def main():
         )
 
         send_tg_photo(tg_token, tg_chat_id, save_path, caption)
-
-    print("[INFO] 全部完成")
 
 if __name__ == "__main__":
     main()
