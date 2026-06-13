@@ -7,11 +7,7 @@ import requests
 # ======================
 # Telegram
 # ======================
-def send_tg_photo(token, chat_id, photo_path, caption="Screenshot"):
-    if not token or not chat_id:
-        print("[WARN] TG_BOT_TOKEN 或 TG_CHAT_ID 未配置")
-        return
-
+def send_tg_photo(token, chat_id, photo_path, caption):
     url = f"https://api.telegram.org/bot{token}/sendPhoto"
     try:
         with open(photo_path, "rb") as f:
@@ -27,7 +23,7 @@ def send_tg_photo(token, chat_id, photo_path, caption="Screenshot"):
         print(f"[ERROR] Telegram 发送失败: {e}")
 
 # ======================
-# Screenshot
+# Screenshot + Info
 # ======================
 def capture_page(url, save_path):
     vdisplay = Xvfb(width=1280, height=720)
@@ -50,10 +46,28 @@ def capture_page(url, save_path):
         page.get(url, retry=2)
         time.sleep(5)
 
+        # 提取服务器名称
+        server_ele = page.ele("text:Renew server", timeout=3)
+        if server_ele:
+            server_name = server_ele.parent().text.split(":")[-1].strip()
+        else:
+            server_name = "未知"
+
+        # 提取到期时间
+        expire_ele = page.ele("text:Expires in", timeout=3)
+        if expire_ele:
+            expire = expire_ele.parent().text.replace("Expires in:", "").strip()
+        else:
+            expire = "未知"
+
+        # 截图（干净）
         print(f"[INFO] 截图保存到: {save_path}")
         page.get_screenshot(path=save_path)
 
         page.quit()
+
+        return server_name, expire
+
     finally:
         vdisplay.stop()
 
@@ -72,9 +86,15 @@ def main():
 
     for idx, url in enumerate(urls, 1):
         save_path = f"output/screenshot_{idx}.png"
-        capture_page(url, save_path)
+        server_name, expire = capture_page(url, save_path)
 
-        caption = f"页面截图 {idx}\nURL: {url}"
+        caption = (
+            f"服务器：{server_name}\n"
+            f"到期：{expire}\n"
+            f"URL：{url}\n"
+            f"请手动续期"
+        )
+
         send_tg_photo(tg_token, tg_chat_id, save_path, caption)
 
     print("[INFO] 全部完成")
