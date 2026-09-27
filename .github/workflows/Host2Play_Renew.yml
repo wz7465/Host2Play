@@ -1,4 +1,6 @@
 name: Screenshot Sender
+permissions:
+  contents: write
 
 on:
   schedule:
